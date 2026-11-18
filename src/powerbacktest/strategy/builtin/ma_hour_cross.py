@@ -59,6 +59,8 @@ class MAHourCrossStrategy(Strategy):
         self._last_sig: dict[str, float] = {}
         self._exec_sig: dict[str, float] = {}  # sym -> 当前生效信号（展示用）
         self.last_exec_sig: float = float("nan")  # 供引擎读取
+        self._live_sig: dict[str, float] = {}
+        self.last_live_sig = float("nan")
         #self._last_sig: float = float("nan")  # last committed daily signal
 
     def warmup_bars(self) -> int:
@@ -159,8 +161,15 @@ class MAHourCrossStrategy(Strategy):
                 self._day_signal[(sym, d)] = 0.0
                 out = 0.0
 
+        # ↓↓↓ 从这里开始替换原 if is_close: self._last_sig[sym] = live_sig ↓↓↓
         if is_close:
-            self._last_sig[sym] = live_sig
+            # 收盘锁存：若今日发生反转，live 以反转值为准并保持
+            self._last_sig[sym] = out if out in (1.0, 0.0) else live_sig
+            self._live_sig[sym] = self._last_sig[sym]  # 供引擎写回
+        elif live_sig == live_sig:
+            self._live_sig[sym] = live_sig  # 非收盘 bar 跟随实时值
+        self.last_live_sig = self._live_sig.get(sym, float("nan"))
+
         if out == 1.0 or out == 0.0:          # 盘中触发或收盘反转都更新
             self._exec_sig[sym] = out
         self.last_exec_sig = self._exec_sig.get(sym, float("nan"))

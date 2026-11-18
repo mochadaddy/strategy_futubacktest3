@@ -431,6 +431,10 @@ class Simulator:
             exec_sig = getattr(self.strategy, "last_exec_sig", math.nan)
             if "daily_sig_exec" in feed.indicators.columns and exec_sig == exec_sig:
                 feed.indicators.loc[feed.bars.index[i], "daily_sig_exec"] = exec_sig
+            # ↓↓↓ 新增：live 信号同样写回 ↓↓↓
+            live_sig = getattr(self.strategy, "last_live_sig", math.nan)
+            if "daily_sig_live" in feed.indicators.columns and live_sig == live_sig:
+                feed.indicators.loc[feed.bars.index[i], "daily_sig_live"] = live_sig
         if self.blocked[sym] and sig != 1.0:
             self.blocked[sym] = False
         if sym in self.pending:
